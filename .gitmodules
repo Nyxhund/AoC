@@ -1,0 +1,6 @@
+[submodule "2023"]
+	path = 2023
+	url = git@github.com:Nyxhund/AoC2023.git
+[submodule "2022"]
+	path = 2022
+	url = git@github.com:Nyxhund/AoC2022.git
