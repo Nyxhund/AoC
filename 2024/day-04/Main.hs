@@ -22,23 +22,33 @@ part1 = map (map matchRegex)
               otherreg = "SAMX"
               matchRegex x = length $ (getAllTextMatches (x =~ reg) :: [String]) ++ (getAllTextMatches (x =~ otherreg) :: [String])
 
+-- matchElemVertical :: Int -> Int -> Matrix Char -> Bool
+-- matchElemVertical a b mat = (getElem (a - 1) b mat == 'S' && getElem (a + 1) b mat == 'M') ||
+--             (getElem (a + 1) b mat == 'S' && getElem (a - 1) b mat == 'M')
+--
+-- matchElemHorizontal :: Int -> Int -> Matrix Char -> Bool
+-- matchElemHorizontal a b mat =
+--         (getElem a (b + 1) mat == 'S' && getElem a (b - 1) mat == 'M') ||
+--          (getElem a (b - 1) mat == 'S' && getElem a (b + 1) mat == 'M')
+
+matchElemDiagonalRight :: Int -> Int -> Matrix Char -> Bool
+matchElemDiagonalRight a b mat =
+        (getElem (a - 1) (b - 1) mat == 'S' && getElem (a + 1) (b + 1) mat == 'M') ||
+         (getElem (a + 1) (b + 1) mat == 'S' && getElem (a - 1) (b - 1) mat == 'M')
+
+matchElemDiagonalLeft :: Int -> Int -> Matrix Char -> Bool
+matchElemDiagonalLeft a b mat =
+        (getElem (a - 1) (b + 1) mat == 'S' && getElem (a + 1) (b - 1) mat == 'M') ||
+         (getElem (a + 1) (b - 1) mat == 'S' && getElem (a - 1) (b + 1) mat == 'M')
+
 matchElemFromMat :: Int -> Int -> Matrix Char -> Bool
-matchElemFromMat a b mat
-        | getElem (a - 1) b mat == 'S' && getElem (a + 1) b mat == 'M'  = True
-        | getElem (a + 1) b mat == 'S' && getElem (a - 1) b mat == 'M'  = True
-        | getElem a (b + 1) mat == 'S' && getElem a (b - 1) mat == 'M'  = True
-        | getElem a (b - 1) mat == 'S' && getElem a (b + 1) mat == 'M'  = True
-        | getElem (a - 1) (b - 1) mat == 'S' && getElem (a + 1) (b + 1) mat == 'M'  = True
-        | getElem (a + 1) (b + 1) mat == 'S' && getElem (a - 1) (b - 1) mat == 'M'  = True
-        | getElem (a - 1) (b + 1) mat == 'S' && getElem (a + 1) (b - 1) mat == 'M'  = True
-        | getElem (a + 1) (b - 1) mat == 'S' && getElem (a - 1) (b + 1) mat == 'M'  = True
-        | otherwise = False
+matchElemFromMat a b mat = matchElemDiagonalLeft a b mat && matchElemDiagonalRight a b mat
 
 traverseMatrix :: Int -> Int -> [String] -> Matrix Char -> Int
 traverseMatrix a b ([] : ta) mat = traverseMatrix 1 (b + 1) ta mat
 traverseMatrix _ _ [] _ = 0
 traverseMatrix a b rest@(l : tl) mat =
-            if c == 'A' && a /= 1 && b /= 1 && a /= nrows mat && b /= ncols mat && matchElemFromMat a b mat then
+            if c == 'A' && a /= 1 && b /= 1 && a /= ncols mat && b /= nrows mat && matchElemFromMat b a mat then
                 1 + traverseMatrix (a + 1) b (drop 1 l : tl) mat
             else
                 0 + traverseMatrix (a + 1) b (drop 1 l : tl) mat
