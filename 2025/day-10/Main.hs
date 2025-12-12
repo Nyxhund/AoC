@@ -5,7 +5,10 @@ import Data.List
 import System.IO
 import Data.List.Split
 import Debug.Trace
-import Math.LinearEquationSolver
+import Data.SBV
+import Data.Foldable
+import Data.Traversable
+import Data.Maybe
 
 data Machine = Machine
   { target    :: [Bool]
@@ -56,34 +59,34 @@ findSmallest (Machine target buttons _) = recur target func 1 initial
 part1 :: [Machine] -> Int
 part1 = sum . map findSmallest
 
-findSmallestJoltage :: Machine -> Int
-findSmallestJoltage (Machine _ buttons target) = recur target func 1 initial
-        where initial = [replicate l 0]
-              l = length target
-              func = makeTransitions f l buttons
-                    where f True  = (+1)
-                          f False = id
+-- This is very much not my answer, but I legit did not know how to use SBV
+-- correctly, so I will assume this is a learning moment and it counts
+-- Thanks Sheinxy !! If you wanna read pretty Haskell, go to
+-- https://github.com/Sheinxy/Advent-Of-Code/
+findBestCombination :: Machine -> IO SMTResult
+findBestCombination (Machine _ buttons target) = optLexicographic $ do
+        ts <- sIntegers ["t" ++ show n | n <- [0 .. length buttons - 1]]
+        for_ ts $ \t -> do
+            constrain $ t .>= 0
+        for_ (zip [0 ..] target) $ \(i, jolt) -> do
+            constrain $ fromIntegral jolt .== sum [t | (t, b) <- zip ts buttons, i `elem` b]
+        minimize "total" (sum ts)
 
-makeMatrix :: Int -> [[Int]] -> [[Integer]]
-makeMatrix l buttons = map (\(i, l) -> map (\x -> f (x `elem` i)) l) $ zip buttons (repeat [0 .. (l - 1)])
-            where f True  = 1
-                  f False = 0
-
-part2 :: [Machine] -> Int
-part2 = sum . map findSmallestJoltage
+part2 :: [Machine] -> IO Int
+part2 input = do
+        opts <- mapM findBestCombination input
+        mins <- for opts $ \res -> do
+                let x = fromJust $ getModelValue "total" res :: Int64
+                return $ fromIntegral x
+        return $ sum mins
 
 main = do
   putStrLn "Exo 1:"
-  -- file <- readFile "input.txt"
-  file <- readFile "example.txt"
+  file <- readFile "input.txt"
+  -- file <- readFile "example.txt"
 
   let d = parse file
-  -- mapM_ print d
   print $ part1 d
-  -- print $ findSmallest $ head $ tail $ tail d
 
-  let mat = makeMatrix 4 $ buttons $ head d
-  -- mapM_ print test
-  res <- solveIntegerLinearEqsAll Z3 5 (transpose mat) [3, 5, 4, 7]
+  res <- part2 d
   print res
-  -- print $ part2 d
