@@ -15,26 +15,31 @@ part1 points = maximum $ map (\((x, y), (x', y')) -> (abs (x - x') + 1) * (abs (
         [(b1, b2) | b1 <- points, b2 <- points, b1 < b2]
         -- Thanks Sheinxy again
 
-genList points = nub $ [(b1, b2) | b1 <- points, b2 <- points, b1 < b2]
+inRange :: (Int, (Int, Int)) -> (Int, (Int, Int)) -> Bool
+inRange (y, (x1, x2)) (x, (y1, y2)) = x1 <= x && x <= x2 && y1 <= y && y <= y2
 
-inRange :: Int -> (Int, Int) -> Bool
-inRange a (x, y) = x <= a && a <= y
+type Check = (Int, (Int, Int)) -> (Int, (Int, Int)) -> Bool
 
-doesNotIntersects :: Int -> IntMap.IntMap (Int, Int) -> (Int, Int) -> Bool
-doesNotIntersects x m (l, h) = 1 > length (filter id $ map (inRange x . (flip $ IntMap.findWithDefault (0, 0)) m) [min l h .. max l h])
+notIntersects :: Check -> (Int, (Int, Int)) -> IntMap.IntMap (Int, Int) -> Bool
+notIntersects p x m = not $ any (p x) $ IntMap.toList m
 
-part2 :: [(Int, Int)] -> Int -- [((Int, Int), (Int, Int))]
+part2 :: [(Int, Int)] -> Int
 part2 l = maximum $ map (\((x, y), (x', y')) -> (abs (x - x') + 1) * (abs (y - y') + 1)) $
             filter (\((x, y), (x', y')) ->
-                    doesNotIntersects y walls (x + 1, x' - 1) &&
-                    doesNotIntersects y' walls (x + 1, x' - 1) &&
-                    doesNotIntersects x lines (y + 1, y' - 1) &&
-                    doesNotIntersects x' lines (y + 1, y' - 1))
+                    notIntersects inRange (min y y' + 1, (min x x' + 1, max x x' - 1)) walls &&
+                    notIntersects inRange (max y y' - 1, (min x x' + 1, max x x' - 1)) walls &&
+                    notIntersects (flip inRange) (min x x' + 1, (min y y' + 1, max y y' - 1)) lines &&
+                    notIntersects (flip inRange) (max x x' - 1, (min y y' + 1, max y y' - 1)) lines)
                 [(b1, b2) | b1 <- l, b2 <- l, b1 < b2]
                 where toProcess = zip l (tail l ++ [head l])
                       f (left, right) ((a, b), (c, d)) | a == c    = (left, IntMap.insert a (min b d, max b d) right)
                                                        | otherwise = (IntMap.insert b (min a c, max a c) left, right)
                       (lines, walls) = foldl f (IntMap.empty, IntMap.empty) toProcess
+
+---   .----------------.
+--    |                |
+--    |                |
+--    .----------------.
 
 -- (fromList [(1,(7,11)),(3,(2,7)),(5,(2,9)),(7,(9,11))],
 -- fromList [(2,(3,5)),(7,(1,3)),(9,(5,7)),(11,(1,7))])
@@ -53,9 +58,12 @@ main = do
   putStrLn "Exo 2:" -- 94501256 too low
                     -- 115599078 too low
                     -- 1170070524 too low ;-;
+                    -- 1341397176
+                    -- 2517127200
 
-  -- let (lines, walls) = part2 d
-  -- print (lines, walls)
+  -- let  = part2 d
+  -- print lines
+  -- print walls
   -- let ((x, y), (x', y')) = ((2,5),(7,1))
   --
   -- print $ doesNotIntersects y walls (x + 1, x' - 1)
